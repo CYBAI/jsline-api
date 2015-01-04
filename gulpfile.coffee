@@ -3,7 +3,7 @@ gulp = require 'gulp'
 $ = require('gulp-load-plugins')()
 
 gulp.task 'js', ->
-  gulp.src ['lib/api/*.coffee']
+  gulp.src ['lib/*.coffee']
     .pipe($.coffee {bare: true}).on 'error', console.log
     .pipe gulp.dest 'dist/js'
 

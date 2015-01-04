@@ -44,14 +44,11 @@ class LineClient extends LineAPI
   getLastOpRevision: () ->
     if @_check_auth()
       @_getLastOpRevision().then (revision) =>
-        console.log "Revision is #{revision}"
         @revision = revision
 
   getProfile: () ->
     if @_check_auth()
       @_getProfile().then (profile) =>
-        console.log 'Profile is '
-        console.dir profile
         @profile = new LineContact(@, profile)
 
   getContactByName: (name) ->
@@ -67,14 +64,12 @@ class LineClient extends LineAPI
     if @_check_auth()
       @groups = []
       @_getGroupIdsJoined().then (groupIdsJoined) =>
-        console.dir groupIdsJoined
         @addGroupsWithIds groupIdsJoined
         @addGroupsWithIds groupIdsJoined, false
 
   addGroupsWithIds: (group_ids, is_joined = true) ->
     if @_check_auth()
       @_getGroups(group_ids).then (new_groups) =>
-        console.dir new_groups
         @groups = new_groups.map (group) =>
           new LineGroup @, group, is_joined
         @groups.sort (a, b) ->
@@ -84,7 +79,6 @@ class LineClient extends LineAPI
     if @_check_auth()
       @_getAllContactIds().then (contact_ids) =>
         @_getContacts(contact_ids).then (contacts) =>
-          console.dir contacts
           @contacts = contacts.map (contact) =>
             new LineContact @, contact
           @contacts.sort (a, b) ->
@@ -94,13 +88,11 @@ class LineClient extends LineAPI
     if @_check_auth()
       start = 1
       count = 50
-      console.log "RefreshActiveRooms with Start: #{start} and Count: #{count}"
       @rooms = []
       while true
         checkChannel = 0
         @_getMessageBoxCompactWrapUpList start, count
         .then (channel) =>
-          console.dir channel
           checkChannel = channel.messageBoxWrapUpList.length
           for box in channel.messageBoxWrapUpList
             if box.messageBox.midType is ttypes.MIDType.ROOM
@@ -109,7 +101,8 @@ class LineClient extends LineAPI
                 @rooms.push new LineRoom @, room
           channel
         .done (channel) ->
-          console.log "Done this Channel: #{channel}"
+          console.log 'Done this Channel: '
+          console.dir channel
         if checkChannel is count
             start += count
           else
