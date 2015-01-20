@@ -93,6 +93,8 @@ class LineClient extends LineAPI
         checkChannel = 0
         @_getMessageBoxCompactWrapUpList start, count
         .then (channel) =>
+          if not channel.messageBoxWrapUpList
+            return channel
           checkChannel = channel.messageBoxWrapUpList.length
           for box in channel.messageBoxWrapUpList
             if box.messageBox.midType is ttypes.MIDType.ROOM

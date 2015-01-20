@@ -30,7 +30,7 @@ class LineBase
     @_messageBox = null
 
   sendMessage: (text) ->
-    message = Message
+    message = new Message
       to: @id
       text: text
     @_client.sendMessage message
@@ -41,7 +41,7 @@ class LineBase
       false
 
   sendSticker: (stickerId='13', stickerPackageId='1', stickerVersion='100', stickerText='[null]') ->    
-    message = Message
+    message = new Message
       to: @id
       text: ''
 
@@ -63,7 +63,7 @@ class LineBase
     fs_readFile = Promise.promisify fs.readFile
     fs_readFile path
     .then (buf) =>
-      message = Message
+      message = new Message
         to: @id
         text: ''
       message.contentType = ContentType.IMAGE
@@ -90,7 +90,7 @@ class LineBase
       defer.resolve buf
 
     defer.promise.then () =>
-      message = Message
+      message = new Message
         to: @id
         text: null
       message.contentType = ContentType.IMAGE
