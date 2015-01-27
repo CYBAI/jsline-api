@@ -16,7 +16,7 @@ class LineClient extends LineAPI
 
     if not (authToken or id and password)
       throw new Error 'id and password or authToken is needed'
-    
+
     if is_mac
       @config.Headers['X-Line-Application'] = "DESKTOPMAC\t#{@config.version}\tMAC\t10.9.4-MAVERICKS-x64"
 
@@ -94,7 +94,7 @@ class LineClient extends LineAPI
         @_getMessageBoxCompactWrapUpList start, count
         .then (channel) =>
           if not channel.messageBoxWrapUpList
-            return channel
+            return false
           checkChannel = channel.messageBoxWrapUpList.length
           for box in channel.messageBoxWrapUpList
             if box.messageBox.midType is ttypes.MIDType.ROOM
@@ -103,12 +103,13 @@ class LineClient extends LineAPI
                 @rooms.push new LineRoom @, room
           channel
         .done (channel) ->
+          checkChannel = 50 if not channel
           console.log 'Done this Channel: '
           console.dir channel
         if checkChannel is count
-            start += count
-          else
-            break
+          start += count
+        else
+          break
       true
 
   createGroupWithIds: (ids = []) ->
@@ -212,12 +213,47 @@ class LineClient extends LineAPI
     if @_check_auth()
       OT = ttypes.OpType
       TalkException = ttypes.TalkException
+      setInterval(
+        Promise.coroutine(
+          () =>
+            try
+              operations = yield @_fetchOperations @revision, count
+              for operation in operations
+                console.dir operation
+                switch operation.type
+                  when OT.END_OF_OPERATION then continue
+                  when OT.SEND_MESSAGE then continue
+                  when OT.RECEIVE_MESSAGE
+                    message = new LineMessage operation.message
 
-      try
-        operations = @_fetchOperations @revision, count
-      catch err
-        console.dir err
-        throw new Error 'user logged in on another machine' if TalkException instanceof err and err.code is 9
+                    raw_sender = operation.message.from
+                    raw_receiver = operation.message.to
+
+                    sender = @getContactOrRoomOrGroupById raw_sender
+                    receiver = @getContactOrRoomOrGroupById raw_receiver
+
+                    if not sender and typeof receiver is LineGroup
+                      for member in receiver.members
+                        if member.id is raw_sender
+                          sender = member
+
+                    if not sender or not receiver
+                      @refreshGroups()
+                      @refreshContacts()
+                      @refreshActiveRooms()
+                      sender = @getContactOrRoomOrGroupById raw_sender
+                      receiver = @getContactOrRoomOrGroupById raw_receiver
+
+                    yield [sender, receiver, message]
+                  else
+                    console.log "[*] #{OT._VALUES_TO_NAMES[operation.type]}"
+                    console.dir operation
+                @revision = Math.max operation.revision, @revision
+            catch err
+              if err instanceof TalkException and err.code is 9
+                throw new Error 'user logged in on another machine'
+        )
+      , 3000)
 
   createContactOrRoomOrGroupByMessage: (message) ->
     if message.toType is ttypes.MIDType.USER

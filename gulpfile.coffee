@@ -1,10 +1,10 @@
-'use strict';
+'use strict'
 gulp = require 'gulp'
 $ = require('gulp-load-plugins')()
 
 gulp.task 'js', ->
   gulp.src ['lib/*.coffee']
-    .pipe($.coffee {bare: true}).on 'error', console.log
+    .pipe($.coffee {bare: true, nodejs: true, harmony: true}).on 'error', console.log
     .pipe gulp.dest 'dist/js'
 
 gulp.task 'clean', require('del').bind null, ['dist']

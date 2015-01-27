@@ -14,10 +14,10 @@ class LineAPI
     @config = config
 
   setTHttpClient: (options = {
-      protocol: thrift.TCompactProtocol
-      headers: @config.Headers
-      path: @config.LINE_HTTP_URL
-    }) ->
+    protocol: thrift.TCompactProtocol
+    headers: @config.Headers
+    path: @config.LINE_HTTP_URL
+  }) ->
     @connection = thrift.createHttpConnection @config.LINE_DOMAIN, 443, options
     @connection.on 'error', (err) ->
       console.dir err
@@ -36,16 +36,27 @@ class LineAPI
       pinVerifier.getRSACrypto json
     .then (rsaCrypto) =>
       @setTHttpClient()
-      @_client.loginWithIdentityCredentialForCertificate @provider, id, password, true, '', @config.hostname, rsaCrypto.crypto, (err, result) =>
-        console.log err if err
-        console.log "Enter Pincode #{result.pinCode} to your mobile phone in 2 minutes"
-        @_checkLoginResultType result.type, result
-        @_loginWithVerifier result
-        .then (verifierResult) =>
-          @_checkLoginResultType verifierResult.type, verifierResult
-          defer.resolve verifierResult
-    , (err) ->
-      console.log "LoginWithIdentityCredentialForCertificate Error: #{err}"
+      @_client.loginWithIdentityCredentialForCertificate(
+        @provider,
+        id,
+        password,
+        true,
+        '',
+        @config.hostname,
+        rsaCrypto.crypto,
+        (err, result) =>
+          console.log err if err
+          console.log(
+            "Enter Pincode #{result.pinCode} to your mobile phone in 2 minutes"
+          )
+          @_checkLoginResultType result.type, result
+          @_loginWithVerifier result
+          .then (verifierResult) =>
+            @_checkLoginResultType verifierResult.type, verifierResult
+            defer.resolve verifierResult
+      , (err) ->
+        console.log "LoginWithIdentityCredentialForCertificate Error: #{err}"
+      )
     defer.promise
 
   _loginWithVerifier: (result) ->

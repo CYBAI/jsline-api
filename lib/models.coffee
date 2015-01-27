@@ -23,7 +23,11 @@ class LineMessage
     @toType = message.toType
     @createdTime = new Date message.createdTime
   toString: () ->
-    """LineMessage (contentType=#{ContentType._VALUES_TO_NAMES[@contentType]}, sender=#{@sender}, receiver=#{@receiver}, msg="#{@text}")"""
+    "
+      LineMessage
+      (contentType=#{ContentType._VALUES_TO_NAMES[@contentType]},
+        sender=#{@sender}, receiver=#{@receiver}, msg=\"#{@text}\")
+    "
 
 class LineBase
   constructor: () ->
@@ -40,7 +44,11 @@ class LineBase
       console.log err if err
       false
 
-  sendSticker: (stickerId='13', stickerPackageId='1', stickerVersion='100', stickerText='[null]') ->    
+  sendSticker: (
+    stickerId='13',
+    stickerPackageId='1',
+    stickerVersion='100',
+    stickerText='[null]') ->
     message = new Message
       to: @id
       text: ''
@@ -54,51 +62,51 @@ class LineBase
 
     @_client.sendMessage message
     .then (result) ->
+      console.log result
       true
     , (err) ->
       console.log err if err
       false
 
   sendImage: (path) ->
-    fs_readFile = Promise.promisify fs.readFile
-    fs_readFile path
-    .then (buf) =>
+    # fs_readFile = Promise.promisify fs.readFile
+    defer = Promise.defer()
+    fs.readFile path, (readFileErr, buf) =>
       message = new Message
         to: @id
         text: ''
-      message.contentType = ContentType.IMAGE
-      message.contentPreview = buf.toString 'base64'
-      message.contentMetadata =
-        PREVIEW_URL: null
-        DOWNLOAD_URL: null
-        PUBLIC: true
-
+        contentType: ContentType.IMAGE
+        contentPreview: buf.toString 'hex'
+        contentMetadata:
+          PREVIEW_URL: ''
+          DOWNLOAD_URL: ''
+          PUBLIC: 'true'
       @_client.sendMessage message
-      .then () ->
-        true
+      .then (result) ->
+        console.log result
+        defer.resolve true
       , (err) ->
         console.log err if err
-        false
+        defer.reject false
+    defer.promise
 
   sendImageWithURL: (url) ->
     defer = Promise.defer()
-    unirest.get
-      url: url
-      encoding: 'binary'
-    .end (err, res, buf) ->
-      throw err if err
-      defer.resolve buf
+    unirest.get url
+    .end (res) ->
+      throw err if res.error
+      defer.resolve res.raw_body
 
-    defer.promise.then () =>
+    defer.promise.then (image) =>
       message = new Message
         to: @id
-        text: null
-      message.contentType = ContentType.IMAGE
-      message.contentPreview = buf.toString 'base64'
-      message.contentMetadata =
-        PREVIEW_URL: url
-        DOWNLOAD_URL: url
-        PUBLIC: true
+        text: ''
+        contentType: ContentType.IMAGE
+        contentPreview: image
+        contentMetadata:
+          PREVIEW_URL: url
+          DOWNLOAD_URL: url
+          PUBLIC: 'true'
       @_client.sendMessage message, 1
       true
     , (err) ->
@@ -170,7 +178,7 @@ class LineRoom extends LineBase
     @_client = client
     @_room = room
     @id = room.mid
-    @contacts = room.contacts.map (contact) =>
+    @contacts = room.contacts.map (contact) ->
       new LineContact(client,contact)
 
   leave: () ->
@@ -217,7 +225,7 @@ class LineContact extends LineBase
       @_client.groups.map (group) ->
         if group._containId @id
           return group
-    
+
     set: (groups) ->
       @groups = groups
 
@@ -229,4 +237,3 @@ module.exports =
   LineGroup: LineGroup
   LineContact: LineContact
   LineMessage: LineMessage
-
