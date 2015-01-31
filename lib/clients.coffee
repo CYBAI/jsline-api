@@ -5,7 +5,7 @@ Promise = require 'bluebird'
 ttypes = require 'curve-thrift/line_types'
 
 class LineClient extends LineAPI
-  constructor: (id = null, password = null, authToken = null, is_mac = false, com_name = 'CYBAI') ->
+  constructor: (id = null, password = null, authToken = null, certificate = null, is_mac = false, com_name = 'CYBAI') ->
     super @config
 
     if not (authToken or id and password)
@@ -22,8 +22,11 @@ class LineClient extends LineAPI
       @password = password
       @is_mac = is_mac
 
+    if certificate
+      @certificate = certificate
+
   login: () ->
-    loginPromise = if @authToken then @_tokenLogin() else @_login @id, @password
+    loginPromise = if @authToken then @_tokenLogin(@authToken, @certificate) else @_login @id, @password
     loginPromise.then (result) =>
       @authToken = result.authToken if result.authToken
       @certificate = result.certificate if result.certificate

@@ -33,10 +33,10 @@ LineAPI = (function () {
     return this._client = thrift.createHttpClient(TalkService, this.connection);
   };
 
-  LineAPI.prototype._tokenLogin = function (authToken) {
+  LineAPI.prototype._tokenLogin = function (authToken, certificate) {
     this.config.Headers["X-Line-Access"] = authToken;
     this.setTHttpClient();
-    return Promise.resolve();
+    return Promise.resolve(authToken, certificate);
   };
 
   LineAPI.prototype._login = function (id, password) {
@@ -267,7 +267,7 @@ ttypes = require("curve-thrift/line_types");
 LineClient = (function (_super) {
   __extends(LineClient, _super);
 
-  function LineClient(id, password, authToken, is_mac, com_name) {
+  function LineClient(id, password, authToken, certificate, is_mac, com_name) {
     if (id == null) {
       id = null;
     }
@@ -276,6 +276,9 @@ LineClient = (function (_super) {
     }
     if (authToken == null) {
       authToken = null;
+    }
+    if (certificate == null) {
+      certificate = null;
     }
     if (is_mac == null) {
       is_mac = false;
@@ -298,11 +301,14 @@ LineClient = (function (_super) {
       this.password = password;
       this.is_mac = is_mac;
     }
+    if (certificate) {
+      this.certificate = certificate;
+    }
   }
 
   LineClient.prototype.login = function () {
     var loginPromise;
-    loginPromise = this.authToken ? this._tokenLogin() : this._login(this.id, this.password);
+    loginPromise = this.authToken ? this._tokenLogin(this.authToken, this.certificate) : this._login(this.id, this.password);
     return loginPromise.then((function (_this) {
       return function (result) {
         if (result.authToken) {

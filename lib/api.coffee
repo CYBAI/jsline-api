@@ -21,10 +21,13 @@ class LineAPI
       console.dir err
     @_client = thrift.createHttpClient TalkService, @connection
 
-  _tokenLogin: (authToken) ->
+  _tokenLogin: (authToken, certificate) ->
     @config.Headers['X-Line-Access'] = authToken
     @setTHttpClient()
-    Promise.resolve()
+    Promise.resolve(
+      authToken
+      certificate
+    )
 
   _login: (id, password) ->
     pinVerifier = new PinVerifier id, password
