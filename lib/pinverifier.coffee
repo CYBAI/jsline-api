@@ -23,5 +23,3 @@ class PinVerifier
       crypto: @crypto
       message: @message
     }
-
-module.exports = PinVerifier

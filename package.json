@@ -2,7 +2,7 @@
   "name": "jsline-api",
   "version": "0.1.0",
   "description": "Line in JS",
-  "main": "config.js",
+  "main": "index.js",
   "scripts": {
     "test": "npm run test-watch",
     "test-once": "jasmine-node spec",

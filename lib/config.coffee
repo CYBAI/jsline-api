@@ -21,3 +21,11 @@ config = module.exports = {
     'X-Line-Application': 'DESKTOPWIN\t3.2.1.83\tWINDOWS\t5.1.2600-XP-x64'
   }
 }
+
+module.exports =
+  LineAPI: LineAPI
+  LineClient: LineClient
+  LineRoom: LineRoom
+  LineGroup: LineGroup
+  LineContact: LineContact
+  LineMessage: LineMessage

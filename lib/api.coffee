@@ -4,10 +4,8 @@ util = require 'util'
 Promise = require 'bluebird'
 unirest = require 'unirest'
 thrift = require 'thrift'
-config = require './config'
 ttypes = require 'curve-thrift/line_types'
 TalkService = require 'curve-thrift/TalkService'
-PinVerifier = require './pinverifier'
 
 class LineAPI
   constructor: () ->
@@ -161,5 +159,3 @@ class LineAPI
       .end (res) ->
         defer.resolve res.body
     defer.promise
-
-module.exports = LineAPI

@@ -231,9 +231,3 @@ class LineContact extends LineBase
 
   toString: () ->
     "<LineContact #{@name}>"
-
-module.exports =
-  LineRoom: LineRoom
-  LineGroup: LineGroup
-  LineContact: LineContact
-  LineMessage: LineMessage

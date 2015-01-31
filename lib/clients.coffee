@@ -2,12 +2,6 @@
 
 util = require 'util'
 Promise = require 'bluebird'
-LineAPI = require './api'
-LineModule = require './models'
-LineRoom = LineModule.LineRoom
-LineGroup = LineModule.LineGroup
-LineContact = LineModule.LineContact
-LineMessage = LineModule.LineMessage
 ttypes = require 'curve-thrift/line_types'
 
 class LineClient extends LineAPI
@@ -272,5 +266,3 @@ class LineClient extends LineAPI
       true
     else
       throw new Error 'You need to login'
-
-module.exports = LineClient

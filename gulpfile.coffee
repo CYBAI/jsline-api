@@ -7,6 +7,7 @@ gulp.task 'js', ->
   gulp.src ['lib/*.coffee']
     .pipe($.coffee {bare: true, nodejs: true, harmony: true}).on 'error', console.log
     .pipe to5()
+    .pipe $.concat 'index.js'
     .pipe gulp.dest '.'
 
 gulp.task 'clean', require('del').bind null, ['dist']
