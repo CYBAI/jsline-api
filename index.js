@@ -36,7 +36,10 @@ LineAPI = (function () {
   LineAPI.prototype._tokenLogin = function (authToken, certificate) {
     this.config.Headers["X-Line-Access"] = authToken;
     this.setTHttpClient();
-    return Promise.resolve(authToken, certificate);
+    return Promise.resolve({
+      authToken: authToken,
+      certificate: certificate
+    });
   };
 
   LineAPI.prototype._login = function (id, password) {
@@ -311,10 +314,10 @@ LineClient = (function (_super) {
     loginPromise = this.authToken ? this._tokenLogin(this.authToken, this.certificate) : this._login(this.id, this.password);
     return loginPromise.then((function (_this) {
       return function (result) {
-        if (result.authToken) {
+        if (result.authToken && !_this.authToken) {
           _this.authToken = result.authToken;
         }
-        if (result.certificate) {
+        if (result.certificate && !_this.certificate) {
           _this.certificate = result.certificate;
         }
         return Promise.join(_this.getLastOpRevision(), _this.getProfile(), _this.refreshGroups(), _this.refreshContacts(), _this.refreshActiveRooms()).then(function () {

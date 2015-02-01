@@ -28,8 +28,8 @@ class LineClient extends LineAPI
   login: () ->
     loginPromise = if @authToken then @_tokenLogin(@authToken, @certificate) else @_login @id, @password
     loginPromise.then (result) =>
-      @authToken = result.authToken if result.authToken
-      @certificate = result.certificate if result.certificate
+      @authToken = result.authToken if result.authToken and not @authToken
+      @certificate = result.certificate if result.certificate and not @certificate
       Promise.join(@getLastOpRevision(), @getProfile(), @refreshGroups(), @refreshContacts(), @refreshActiveRooms())
       .then () ->
         console.log 'Login Successfully'

@@ -24,10 +24,7 @@ class LineAPI
   _tokenLogin: (authToken, certificate) ->
     @config.Headers['X-Line-Access'] = authToken
     @setTHttpClient()
-    Promise.resolve(
-      authToken
-      certificate
-    )
+    Promise.resolve {authToken, certificate}
 
   _login: (id, password) ->
     pinVerifier = new PinVerifier id, password
