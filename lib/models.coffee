@@ -168,10 +168,11 @@ class LineGroup extends LineBase
     id in @members
 
   toString: () ->
-    if @is_joined
-      "<LineGroup #{@name} ##{@members.length}>"
-    else
-      "<LineGroup #{@name} ##{@members.length} (invited)>"
+    @id
+    # if @is_joined
+    #   "<LineGroup #{@name} ##{@members.length}>"
+    # else
+    #   "<LineGroup #{@name} ##{@members.length} (invited)>"
 
 class LineRoom extends LineBase
   constructor: (client, room) ->
@@ -209,6 +210,7 @@ class LineContact extends LineBase
     @_contact = contact
     @id = contact.mid
     @name = contact.displayName
+    @iconPath = "http://#{config.LINE_OS_URL}#{contact.picturePath}/preview"
     @statusMessage = contact.statusMessage
 
   @property 'rooms',
@@ -230,4 +232,5 @@ class LineContact extends LineBase
       @groups = groups
 
   toString: () ->
-    "<LineContact #{@name}>"
+    @id
+    # "<LineContact #{@name}>"

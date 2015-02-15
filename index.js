@@ -1,24 +1,24 @@
-"use strict";
+'use strict';
 var LineAPI, Promise, TalkService, thrift, ttypes, unirest, util;
 
-util = require("util");
+util = require('util');
 
-Promise = require("bluebird");
+Promise = require('bluebird');
 
-unirest = require("unirest");
+unirest = require('unirest');
 
-thrift = require("thrift");
+thrift = require('thrift');
 
-ttypes = require("curve-thrift/line_types");
+ttypes = require('curve-thrift/line_types');
 
-TalkService = require("curve-thrift/TalkService");
+TalkService = require('curve-thrift/TalkService');
 
-LineAPI = (function () {
+LineAPI = (function() {
   function LineAPI() {
     this.config = config;
   }
 
-  LineAPI.prototype.setTHttpClient = function (options) {
+  LineAPI.prototype.setTHttpClient = function(options) {
     if (options == null) {
       options = {
         protocol: thrift.TCompactProtocol,
@@ -27,14 +27,14 @@ LineAPI = (function () {
       };
     }
     this.connection = thrift.createHttpConnection(this.config.LINE_DOMAIN, 443, options);
-    this.connection.on("error", function (err) {
+    this.connection.on('error', function(err) {
       return console.dir(err);
     });
     return this._client = thrift.createHttpClient(TalkService, this.connection);
   };
 
-  LineAPI.prototype._tokenLogin = function (authToken, certificate) {
-    this.config.Headers["X-Line-Access"] = authToken;
+  LineAPI.prototype._tokenLogin = function(authToken, certificate) {
+    this.config.Headers['X-Line-Access'] = authToken;
     this.setTHttpClient();
     return Promise.resolve({
       authToken: authToken,
@@ -42,26 +42,27 @@ LineAPI = (function () {
     });
   };
 
-  LineAPI.prototype._login = function (id, password) {
+  LineAPI.prototype._login = function(id, password) {
     var defer, pinVerifier;
     pinVerifier = new PinVerifier(id, password);
     defer = Promise.defer();
-    this._setProvider(id).then(function (json) {
+    this._setProvider(id).then(function(json) {
       return pinVerifier.getRSACrypto(json);
-    }).then((function (_this) {
-      return function (rsaCrypto) {
+    }).then((function(_this) {
+      return function(rsaCrypto) {
         _this.setTHttpClient();
-        return _this._client.loginWithIdentityCredentialForCertificate(_this.provider, id, password, true, "", _this.config.hostname, rsaCrypto.crypto, function (err, result) {
+        return _this._client.loginWithIdentityCredentialForCertificate(_this.provider, id, password, true, '', _this.config.hostname, rsaCrypto.crypto, function(err, result) {
           if (err) {
             console.log(err);
           }
+          _this._client.pinCode = result.pinCode;
           console.log("Enter Pincode " + result.pinCode + " to your mobile phone in 2 minutes");
           _this._checkLoginResultType(result.type, result);
-          return _this._loginWithVerifier(result).then(function (verifierResult) {
+          return _this._loginWithVerifier(result).then(function(verifierResult) {
             _this._checkLoginResultType(verifierResult.type, verifierResult);
             return defer.resolve(verifierResult);
           });
-        }, function (err) {
+        }, function(err) {
           return console.log("LoginWithIdentityCredentialForCertificate Error: " + err);
         });
       };
@@ -69,17 +70,17 @@ LineAPI = (function () {
     return defer.promise;
   };
 
-  LineAPI.prototype._loginWithVerifier = function (result) {
-    return this.getJson(this.config.LINE_CERTIFICATE_URL).then((function (_this) {
-      return function (json) {
+  LineAPI.prototype._loginWithVerifier = function(result) {
+    return this.getJson(this.config.LINE_CERTIFICATE_URL).then((function(_this) {
+      return function(json) {
         return _this._client.loginWithVerifierForCertificate(json.result.verifier);
       };
-    })(this), function (err) {
+    })(this), function(err) {
       return console.log("LoginWithVerifierForCertificate Error: " + err);
     });
   };
 
-  LineAPI.prototype._setProvider = function (id) {
+  LineAPI.prototype._setProvider = function(id) {
     this.provider = this.config.EMAIL_REGEX.test(id) ? ttypes.IdentityProvider.LINE : ttypes.IdentityProvider.NAVER_KR;
     if (this.provider === ttypes.IdentityProvider.LINE) {
       return this.getJson(this.config.LINE_SESSION_LINE_URL);
@@ -88,92 +89,92 @@ LineAPI = (function () {
     }
   };
 
-  LineAPI.prototype._checkLoginResultType = function (type, result) {
-    this.config.Headers["X-Line-Access"] = result.authToken || result.verifier;
+  LineAPI.prototype._checkLoginResultType = function(type, result) {
+    this.config.Headers['X-Line-Access'] = result.authToken || result.verifier;
     if (result.type === ttypes.LoginResultType.SUCCESS) {
       this.certificate = result.certificate;
       this.authToken = result.authToken;
     } else if (result.type === ttypes.LoginResultType.REQUIRE_QRCODE) {
-      console.log("require QR code");
+      console.log('require QR code');
     } else if (result.type === ttypes.LoginResultType.REQUIRE_DEVICE_CONFIRM) {
-      console.log("require device confirm");
+      console.log('require device confirm');
     } else {
-      throw new Error("unkown type");
+      throw new Error('unkown type');
     }
     return result;
   };
 
-  LineAPI.prototype._getProfile = function () {
+  LineAPI.prototype._getProfile = function() {
     return this._client.getProfile();
   };
 
-  LineAPI.prototype._getAllContactIds = function () {
+  LineAPI.prototype._getAllContactIds = function() {
     return this._client.getAllContactIds();
   };
 
-  LineAPI.prototype._getBlockedContactIds = function () {
+  LineAPI.prototype._getBlockedContactIds = function() {
     return this._client.getBlockedContactIds();
   };
 
-  LineAPI.prototype._getContacts = function (ids) {
+  LineAPI.prototype._getContacts = function(ids) {
     if (!Array.isArray(ids)) {
-      throw new Error("argument should be array of contact ids");
+      throw new Error('argument should be array of contact ids');
     }
     return this._client.getContacts(ids);
   };
 
-  LineAPI.prototype._createRoom = function (ids, seq) {
+  LineAPI.prototype._createRoom = function(ids, seq) {
     if (seq == null) {
       seq = 0;
     }
     return this._client.createRoom(seq, ids);
   };
 
-  LineAPI.prototype._getRoom = function (id) {
+  LineAPI.prototype._getRoom = function(id) {
     return this._client.getRoom(id);
   };
 
-  LineAPI.prototype._inviteIntoRoom = function (roomId, contactIds) {
+  LineAPI.prototype._inviteIntoRoom = function(roomId, contactIds) {
     if (contactIds == null) {
       contactIds = [];
     }
     return this._client.inviteIntoRoom(0, roomId, contactIds);
   };
 
-  LineAPI.prototype._leaveRoom = function (id) {
+  LineAPI.prototype._leaveRoom = function(id) {
     return this._client.leaveRoom(0, id);
   };
 
-  LineAPI.prototype._createGroup = function (name, ids, seq) {
+  LineAPI.prototype._createGroup = function(name, ids, seq) {
     if (seq == null) {
       seq = 0;
     }
     return this._client.createGroup(seq, name, ids);
   };
 
-  LineAPI.prototype._getGroups = function (ids) {
+  LineAPI.prototype._getGroups = function(ids) {
     if (!Array.isArray(ids)) {
-      throw new Error("argument should be array of group ids");
+      throw new Error('argument should be array of group ids');
     }
     return this._client.getGroups(ids);
   };
 
-  LineAPI.prototype._getGroupIdsJoined = function () {
+  LineAPI.prototype._getGroupIdsJoined = function() {
     return this._client.getGroupIdsJoined();
   };
 
-  LineAPI.prototype._getGroupIdsInvited = function () {
+  LineAPI.prototype._getGroupIdsInvited = function() {
     return this._client.getGroupIdsInvited();
   };
 
-  LineAPI.prototype._acceptGroupInvitation = function (groupId, seq) {
+  LineAPI.prototype._acceptGroupInvitation = function(groupId, seq) {
     if (seq == null) {
       seq = 0;
     }
     return this._client.acceptGroupInvitation(seq, groupId);
   };
 
-  LineAPI.prototype._cancelGroupInvitation = function (groupId, contactIds, seq) {
+  LineAPI.prototype._cancelGroupInvitation = function(groupId, contactIds, seq) {
     if (contactIds == null) {
       contactIds = [];
     }
@@ -183,7 +184,7 @@ LineAPI = (function () {
     return this._client.cancelGroupInvitation(seq, groupId, contactIds);
   };
 
-  LineAPI.prototype._inviteIntoGroup = function (groupId, contactIds, seq) {
+  LineAPI.prototype._inviteIntoGroup = function(groupId, contactIds, seq) {
     if (contactIds == null) {
       contactIds = [];
     }
@@ -193,40 +194,40 @@ LineAPI = (function () {
     return this._client.inviteIntoGroup(seq, groupId, contactIds);
   };
 
-  LineAPI.prototype._leaveGroup = function (id) {
+  LineAPI.prototype._leaveGroup = function(id) {
     return this._client.leaveGroup(0, id);
   };
 
-  LineAPI.prototype._getRecentMessages = function (id, count) {
+  LineAPI.prototype._getRecentMessages = function(id, count) {
     if (count == null) {
       count = 1;
     }
     return this._client.getRecentMessages(id, count);
   };
 
-  LineAPI.prototype._sendMessage = function (message, seq) {
+  LineAPI.prototype._sendMessage = function(message, seq) {
     if (seq == null) {
       seq = 0;
     }
     return this._client.sendMessage(seq, message);
   };
 
-  LineAPI.prototype._getLastOpRevision = function () {
+  LineAPI.prototype._getLastOpRevision = function() {
     return this._client.getLastOpRevision();
   };
 
-  LineAPI.prototype._fetchOperations = function (revision, count) {
+  LineAPI.prototype._fetchOperations = function(revision, count) {
     if (count == null) {
       count = 50;
     }
     return this._client.fetchOperations(revision, count);
   };
 
-  LineAPI.prototype._getMessageBoxCompactWrapUp = function (id) {
+  LineAPI.prototype._getMessageBoxCompactWrapUp = function(id) {
     return this._client.getMessageBoxCompactWrapUp(id);
   };
 
-  LineAPI.prototype._getMessageBoxCompactWrapUpList = function (start, count) {
+  LineAPI.prototype._getMessageBoxCompactWrapUpList = function(start, count) {
     if (start == null) {
       start = 1;
     }
@@ -236,38 +237,42 @@ LineAPI = (function () {
     return this._client.getMessageBoxCompactWrapUpList(start, count);
   };
 
-  LineAPI.prototype.getJson = function (path) {
+  LineAPI.prototype.getJson = function(path) {
     var defer;
     defer = Promise.defer();
-    unirest.get("http://" + this.config.LINE_DOMAIN + path).headers(this.config.Headers).timeout(120000).end(function (res) {
+    unirest.get('http://' + this.config.LINE_DOMAIN + path).headers(this.config.Headers).timeout(120000).end(function(res) {
       return defer.resolve(res.body);
     });
     return defer.promise;
   };
 
   return LineAPI;
+
 })();
-"use strict";
-var LineClient,
-    Promise,
-    ttypes,
-    util,
-    __extends = function (child, parent) {
-  for (var key in parent) {
-    if (__hasProp.call(parent, key)) child[key] = parent[key];
-  }function ctor() {
-    this.constructor = child;
-  }ctor.prototype = parent.prototype;child.prototype = new ctor();child.__super__ = parent.prototype;return child;
-},
-    __hasProp = ({}).hasOwnProperty;
 
-util = require("util");
+'use strict';
+var LineClient, Promise, ttypes, util,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
-Promise = require("bluebird");
+util = require('util');
 
-ttypes = require("curve-thrift/line_types");
+Promise = require('bluebird');
 
-LineClient = (function (_super) {
+ttypes = require('curve-thrift/line_types');
+
+ttypes.OpType._VALUES_TO_NAMES = function(type) {
+  var name, typeNumber, _ref;
+  _ref = ttypes.OpType;
+  for (name in _ref) {
+    typeNumber = _ref[name];
+    if (type === typeNumber) {
+      return name;
+    }
+  }
+};
+
+LineClient = (function(_super) {
   __extends(LineClient, _super);
 
   function LineClient(id, password, authToken, certificate, is_mac, com_name) {
@@ -287,17 +292,17 @@ LineClient = (function (_super) {
       is_mac = false;
     }
     if (com_name == null) {
-      com_name = "CYBAI";
+      com_name = 'CYBAI';
     }
     LineClient.__super__.constructor.call(this, this.config);
     if (!(authToken || id && password)) {
-      throw new Error("id and password or authToken is needed");
+      throw new Error('id and password or authToken is needed');
     }
     if (is_mac) {
-      this.config.Headers["X-Line-Application"] = "DESKTOPMAC\t" + this.config.version + "\tMAC\t10.9.4-MAVERICKS-x64";
+      this.config.Headers['X-Line-Application'] = "DESKTOPMAC\t" + this.config.version + "\tMAC\t10.9.4-MAVERICKS-x64";
     }
     if (authToken) {
-      this.authToken = this.config.Headers["X-Line-Access"] = authToken;
+      this.authToken = this.config.Headers['X-Line-Access'] = authToken;
     } else {
       this._setProvider(id);
       this.id = id;
@@ -309,21 +314,21 @@ LineClient = (function (_super) {
     }
   }
 
-  LineClient.prototype.login = function () {
+  LineClient.prototype.login = function() {
     var loginPromise;
     loginPromise = this.authToken ? this._tokenLogin(this.authToken, this.certificate) : this._login(this.id, this.password);
-    return loginPromise.then((function (_this) {
-      return function (result) {
+    return loginPromise.then((function(_this) {
+      return function(result) {
         if (result.authToken && !_this.authToken) {
           _this.authToken = result.authToken;
         }
         if (result.certificate && !_this.certificate) {
           _this.certificate = result.certificate;
         }
-        return Promise.join(_this.getLastOpRevision(), _this.getProfile(), _this.refreshGroups(), _this.refreshContacts(), _this.refreshActiveRooms()).then(function () {
-          console.log("Login Successfully");
-          return true;
-        }, function (err) {
+        return Promise.join(_this.getLastOpRevision(), _this.getProfile(), _this.refreshGroups(), _this.refreshContacts(), _this.refreshActiveRooms()).then(function() {
+          console.log('Login Successfully');
+          return result;
+        }, function(err) {
           console.log(err);
           return false;
         });
@@ -331,27 +336,27 @@ LineClient = (function (_super) {
     })(this));
   };
 
-  LineClient.prototype.getLastOpRevision = function () {
+  LineClient.prototype.getLastOpRevision = function() {
     if (this._check_auth()) {
-      return this._getLastOpRevision().then((function (_this) {
-        return function (revision) {
+      return this._getLastOpRevision().then((function(_this) {
+        return function(revision) {
           return _this.revision = revision;
         };
       })(this));
     }
   };
 
-  LineClient.prototype.getProfile = function () {
+  LineClient.prototype.getProfile = function() {
     if (this._check_auth()) {
-      return this._getProfile().then((function (_this) {
-        return function (profile) {
+      return this._getProfile().then((function(_this) {
+        return function(profile) {
           return _this.profile = new LineContact(_this, profile);
         };
       })(this));
     }
   };
 
-  LineClient.prototype.getContactByName = function (name) {
+  LineClient.prototype.getContactByName = function(name) {
     var contact, _i, _len, _ref;
     _ref = this.contacts;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -362,7 +367,7 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.getContactById = function (id) {
+  LineClient.prototype.getContactById = function(id) {
     var contact, _i, _len, _ref;
     _ref = this.contacts;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -373,15 +378,15 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.getContactOrRoomOrGroupById = function (id) {
+  LineClient.prototype.getContactOrRoomOrGroupById = function(id) {
     return this.getContactById(id) || this.getRoomById(id) || this.getGroupById(id);
   };
 
-  LineClient.prototype.refreshGroups = function () {
+  LineClient.prototype.refreshGroups = function() {
     if (this._check_auth()) {
       this.groups = [];
-      return this._getGroupIdsJoined().then((function (_this) {
-        return function (groupIdsJoined) {
+      return this._getGroupIdsJoined().then((function(_this) {
+        return function(groupIdsJoined) {
           _this.addGroupsWithIds(groupIdsJoined);
           return _this.addGroupsWithIds(groupIdsJoined, false);
         };
@@ -389,17 +394,17 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.addGroupsWithIds = function (group_ids, is_joined) {
+  LineClient.prototype.addGroupsWithIds = function(group_ids, is_joined) {
     if (is_joined == null) {
       is_joined = true;
     }
     if (this._check_auth()) {
-      return this._getGroups(group_ids).then((function (_this) {
-        return function (new_groups) {
-          _this.groups = new_groups.map(function (group) {
+      return this._getGroups(group_ids).then((function(_this) {
+        return function(new_groups) {
+          _this.groups = new_groups.map(function(group) {
             return new LineGroup(_this, group, is_joined);
           });
-          return _this.groups.sort(function (a, b) {
+          return _this.groups.sort(function(a, b) {
             return a.id - b.id;
           });
         };
@@ -407,15 +412,15 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.refreshContacts = function () {
+  LineClient.prototype.refreshContacts = function() {
     if (this._check_auth()) {
-      return this._getAllContactIds().then((function (_this) {
-        return function (contact_ids) {
-          return _this._getContacts(contact_ids).then(function (contacts) {
-            _this.contacts = contacts.map(function (contact) {
+      return this._getAllContactIds().then((function(_this) {
+        return function(contact_ids) {
+          return _this._getContacts(contact_ids).then(function(contacts) {
+            _this.contacts = contacts.map(function(contact) {
               return new LineContact(_this, contact);
             });
-            return _this.contacts.sort(function (a, b) {
+            return _this.contacts.sort(function(a, b) {
               return a.id - b.id;
             });
           });
@@ -424,7 +429,7 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.refreshActiveRooms = function () {
+  LineClient.prototype.refreshActiveRooms = function() {
     var checkChannel, count, start;
     if (this._check_auth()) {
       start = 1;
@@ -432,8 +437,8 @@ LineClient = (function (_super) {
       this.rooms = [];
       while (true) {
         checkChannel = 0;
-        this._getMessageBoxCompactWrapUpList(start, count).then((function (_this) {
-          return function (channel) {
+        this._getMessageBoxCompactWrapUpList(start, count).then((function(_this) {
+          return function(channel) {
             var box, _i, _len, _ref;
             if (!channel.messageBoxWrapUpList) {
               return false;
@@ -443,18 +448,18 @@ LineClient = (function (_super) {
             for (_i = 0, _len = _ref.length; _i < _len; _i++) {
               box = _ref[_i];
               if (box.messageBox.midType === ttypes.MIDType.ROOM) {
-                _this._getRoom(box.messageBox.id).then(function (room) {
+                _this._getRoom(box.messageBox.id).then(function(room) {
                   return _this.rooms.push(new LineRoom(_this, room));
                 });
               }
             }
             return channel;
           };
-        })(this)).done(function (channel) {
+        })(this)).done(function(channel) {
           if (!channel) {
             checkChannel = 50;
           }
-          console.log("Done this Channel: ");
+          console.log('Done this Channel: ');
           return console.dir(channel);
         });
         if (checkChannel === count) {
@@ -467,13 +472,13 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.createGroupWithIds = function (ids) {
+  LineClient.prototype.createGroupWithIds = function(ids) {
     if (ids == null) {
       ids = [];
     }
     if (this._check_auth()) {
-      return this._createGroup("", ids).then((function (_this) {
-        return function (created) {
+      return this._createGroup('', ids).then((function(_this) {
+        return function(created) {
           var group;
           group = new LineGroup(_this, created);
           _this.groups.push(created);
@@ -483,13 +488,13 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.createGroupWithContacts = function (name, contacts) {
+  LineClient.prototype.createGroupWithContacts = function(name, contacts) {
     var contact, contact_ids;
     if (contacts == null) {
       contacts = [];
     }
     if (this._check_auth()) {
-      contact_ids = (function () {
+      contact_ids = (function() {
         var _i, _len, _results;
         _results = [];
         for (_i = 0, _len = contacts.length; _i < _len; _i++) {
@@ -498,8 +503,8 @@ LineClient = (function (_super) {
         }
         return _results;
       })();
-      return this._createGroup(name, contact_ids).then((function (_this) {
-        return function (created) {
+      return this._createGroup(name, contact_ids).then((function(_this) {
+        return function(created) {
           var group;
           group = new LineGroup(_this, created);
           _this.groups.push(group);
@@ -509,7 +514,7 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.getGroupByName = function (name) {
+  LineClient.prototype.getGroupByName = function(name) {
     var group, _i, _len, _ref;
     _ref = this.groups;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -520,7 +525,7 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.getGroupById = function (id) {
+  LineClient.prototype.getGroupById = function(id) {
     var group, _i, _len, _ref;
     _ref = this.groups;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -531,13 +536,13 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.inviteIntoGroup = function (group, contacts) {
+  LineClient.prototype.inviteIntoGroup = function(group, contacts) {
     var contact, contact_ids;
     if (contacts == null) {
       contacts = [];
     }
     if (this._check_auth()) {
-      contact_ids = (function () {
+      contact_ids = (function() {
         var _i, _len, _results;
         _results = [];
         for (_i = 0, _len = contacts.length; _i < _len; _i++) {
@@ -550,38 +555,38 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.acceptGroupInvitation = function (group) {
+  LineClient.prototype.acceptGroupInvitation = function(group) {
     if (this._check_auth()) {
-      return this._acceptGroupInvitation(group.id).then(function () {
+      return this._acceptGroupInvitation(group.id).then(function() {
         return true;
-      }, function () {
+      }, function() {
         return false;
       });
     }
   };
 
-  LineClient.prototype.leaveGroup = function (group) {
+  LineClient.prototype.leaveGroup = function(group) {
     if (this._check_auth()) {
-      return this._leaveGroup(group.id).then((function (_this) {
-        return function () {
-          _this.groups = _this.groups.filter(function (gp) {
+      return this._leaveGroup(group.id).then((function(_this) {
+        return function() {
+          _this.groups = _this.groups.filter(function(gp) {
             return gp.id !== group.id;
           });
           return true;
         };
-      })(this), function () {
+      })(this), function() {
         return false;
       });
     }
   };
 
-  LineClient.prototype.createRoomWithIds = function (ids) {
+  LineClient.prototype.createRoomWithIds = function(ids) {
     if (ids == null) {
       ids = [];
     }
     if (this._check_auth()) {
-      return this._createRoom(ids).then((function (_this) {
-        return function (created) {
+      return this._createRoom(ids).then((function(_this) {
+        return function(created) {
           var room;
           room = new LineRoom(_this, created);
           _this.rooms.push(room);
@@ -591,13 +596,13 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.createRoomWithContacts = function (contacts) {
+  LineClient.prototype.createRoomWithContacts = function(contacts) {
     var contact, contact_ids;
     if (contacts == null) {
       contacts = [];
     }
     if (this._check_auth()) {
-      contact_ids = (function () {
+      contact_ids = (function() {
         var _i, _len, _results;
         _results = [];
         for (_i = 0, _len = contacts.length; _i < _len; _i++) {
@@ -606,8 +611,8 @@ LineClient = (function (_super) {
         }
         return _results;
       })();
-      return this._createRoom(contact_ids).then((function (_this) {
-        return function (created) {
+      return this._createRoom(contact_ids).then((function(_this) {
+        return function(created) {
           var room;
           room = new LineRoom(_this, created);
           _this.rooms.push(room);
@@ -617,7 +622,7 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.getRoomById = function (id) {
+  LineClient.prototype.getRoomById = function(id) {
     var room, _i, _len, _ref;
     _ref = this.rooms;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -628,13 +633,13 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.inviteIntoRoom = function (room, contacts) {
+  LineClient.prototype.inviteIntoRoom = function(room, contacts) {
     var contact, contact_ids;
     if (contacts == null) {
       contacts = [];
     }
     if (this._check_auth()) {
-      contact_ids = (function () {
+      contact_ids = (function() {
         var _i, _len, _results;
         _results = [];
         for (_i = 0, _len = contacts.length; _i < _len; _i++) {
@@ -647,20 +652,20 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.leaveRoom = function (room) {
+  LineClient.prototype.leaveRoom = function(room) {
     if (this._check_auth()) {
-      return this._leaveRoom(room.id).then(function () {
-        this.rooms = this.rooms.filter(function (rm) {
+      return this._leaveRoom(room.id).then(function() {
+        this.rooms = this.rooms.filter(function(rm) {
           return rm.id !== room.id;
         });
         return true;
-      }, function () {
+      }, function() {
         return false;
       });
     }
   };
 
-  LineClient.prototype.sendMessage = function (message, seq) {
+  LineClient.prototype.sendMessage = function(message, seq) {
     if (seq == null) {
       seq = 0;
     }
@@ -669,25 +674,25 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.getMessageBox = function (id) {
+  LineClient.prototype.getMessageBox = function(id) {
     if (this._check_auth()) {
-      return this._getMessageBoxCompactWrapUp(id).then(function (messageBoxWrapUp) {
+      return this._getMessageBoxCompactWrapUp(id).then(function(messageBoxWrapUp) {
         return messageBoxWrapUp.messageBox;
       });
     }
   };
 
-  LineClient.prototype.getRecentMessages = function (messageBox, count) {
+  LineClient.prototype.getRecentMessages = function(messageBox, count) {
     if (this._check_auth()) {
-      return this._getRecentMessages(messageBox.id, count).then((function (_this) {
-        return function (messages) {
+      return this._getRecentMessages(messageBox.id, count).then((function(_this) {
+        return function(messages) {
           return _this.getLineMessageFromMessage(messages);
         };
       })(this));
     }
   };
 
-  LineClient.prototype.longPoll = function (count) {
+  LineClient.prototype.longPoll = function(count) {
     var OT, TalkException;
     if (count == null) {
       count = 50;
@@ -695,90 +700,64 @@ LineClient = (function (_super) {
     if (this._check_auth()) {
       OT = ttypes.OpType;
       TalkException = ttypes.TalkException;
-      return setInterval(Promise.coroutine((function (_this) {
-        return regeneratorRuntime.mark(function callee$3$0() {
+      return setInterval(Promise.coroutine((function(_this) {
+        return function*() {
           var err, member, message, operation, operations, raw_receiver, raw_sender, receiver, sender, _i, _j, _len, _len1, _ref, _results;
-          return regeneratorRuntime.wrap(function callee$3$0$(context$4$0) {
-            while (1) switch (context$4$0.prev = context$4$0.next) {
-              case 0:
-                context$4$0.prev = 0;
-                context$4$0.next = 3;
-                return _this._fetchOperations(_this.revision, count);
-              case 3:
-                operations = context$4$0.sent;
-                _results = [];
-                _i = 0, _len = operations.length;
-              case 6:
-                if (!(_i < _len)) {
-                  context$4$0.next = 30;
-                  break;
-                }
-                operation = operations[_i];
-                console.dir(operation);
-                context$4$0.t0 = operation.type;
-                context$4$0.next = context$4$0.t0 === OT.END_OF_OPERATION ? 12 : context$4$0.t0 === OT.SEND_MESSAGE ? 13 : context$4$0.t0 === OT.RECEIVE_MESSAGE ? 14 : 24;
-                break;
-              case 12:
-                return context$4$0.abrupt("continue", 27);
-              case 13:
-                return context$4$0.abrupt("continue", 27);
-              case 14:
-                message = new LineMessage(operation.message);
-                raw_sender = operation.message.from;
-                raw_receiver = operation.message.to;
-                sender = _this.getContactOrRoomOrGroupById(raw_sender);
-                receiver = _this.getContactOrRoomOrGroupById(raw_receiver);
-                if (!sender && typeof receiver === LineGroup) {
-                  _ref = receiver.members;
-                  for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-                    member = _ref[_j];
-                    if (member.id === raw_sender) {
-                      sender = member;
-                    }
-                  }
-                }
-                if (!sender || !receiver) {
-                  _this.refreshGroups();
-                  _this.refreshContacts();
-                  _this.refreshActiveRooms();
+          try {
+            operations = (yield _this._fetchOperations(_this.revision, count));
+            _results = [];
+            for (_i = 0, _len = operations.length; _i < _len; _i++) {
+              operation = operations[_i];
+              console.dir(operation);
+              switch (operation.type) {
+                case OT.END_OF_OPERATION:
+                  continue;
+                case OT.SEND_MESSAGE:
+                  continue;
+                case OT.RECEIVE_MESSAGE:
+                  message = new LineMessage(_this, operation.message);
+                  raw_sender = operation.message.from;
+                  raw_receiver = operation.message.to;
                   sender = _this.getContactOrRoomOrGroupById(raw_sender);
                   receiver = _this.getContactOrRoomOrGroupById(raw_receiver);
-                }
-                context$4$0.next = 23;
-                return [sender, receiver, message];
-              case 23:
-                return context$4$0.abrupt("break", 26);
-              case 24:
-                console.log("[*] " + OT._VALUES_TO_NAMES[operation.type]);
-                console.dir(operation);
-              case 26:
-                _results.push(_this.revision = Math.max(operation.revision, _this.revision));
-              case 27:
-                _i++;
-                context$4$0.next = 6;
-                break;
-              case 30:
-                return context$4$0.abrupt("return", _results);
-              case 33:
-                context$4$0.prev = 33;
-                context$4$0.t1 = context$4$0["catch"](0);
-                err = context$4$0.t1;
-                if (!(err instanceof TalkException && err.code === 9)) {
-                  context$4$0.next = 38;
+                  if (!sender && typeof receiver === LineGroup) {
+                    _ref = receiver.members;
+                    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+                      member = _ref[_j];
+                      if (member.id === raw_sender) {
+                        sender = member;
+                      }
+                    }
+                  }
+                  if (!sender || !receiver) {
+                    _this.refreshGroups();
+                    _this.refreshContacts();
+                    _this.refreshActiveRooms();
+                    sender = _this.getContactOrRoomOrGroupById(raw_sender);
+                    receiver = _this.getContactOrRoomOrGroupById(raw_receiver);
+                  }
+                  (yield [sender, receiver, message]);
                   break;
-                }
-                throw new Error("user logged in on another machine");
-              case 38:
-              case "end":
-                return context$4$0.stop();
+                default:
+                  console.log("[*] " + OT._VALUES_TO_NAMES[operation.type]);
+                  console.dir(operation);
+              }
+              _this.revision = Math.max(operation.revision, _this.revision);
+              _results.push(_this.revision);
             }
-          }, callee$3$0, this, [[0, 33]]);
-        });
+            return _results;
+          } catch (_error) {
+            err = _error;
+            if (err instanceof TalkException && err.code === 9) {
+              throw new Error('user logged in on another machine');
+            }
+          }
+        };
       })(this)), 3000);
     }
   };
 
-  LineClient.prototype.createContactOrRoomOrGroupByMessage = function (message) {
+  LineClient.prototype.createContactOrRoomOrGroupByMessage = function(message) {
     if (message.toType === ttypes.MIDType.USER) {
       return console.log(message.toType);
     } else if (message.toType === ttypes.MIDType.ROOM) {
@@ -788,104 +767,50 @@ LineClient = (function (_super) {
     }
   };
 
-  LineClient.prototype.getLineMessageFromMessage = function (messages) {
+  LineClient.prototype.getLineMessageFromMessage = function(messages) {
     if (messages == null) {
       messages = [];
     }
-    return messages.map((function (_this) {
-      return function (msg) {
+    return messages.map((function(_this) {
+      return function(msg) {
         return new LineMessage(_this, msg);
       };
     })(this));
   };
 
-  LineClient.prototype._check_auth = function () {
+  LineClient.prototype._check_auth = function() {
     if (this.authToken) {
       return true;
     } else {
-      throw new Error("You need to login");
+      throw new Error('You need to login');
     }
   };
 
   return LineClient;
+
 })(LineAPI);
-"use strict";
 
-var LINE_DOMAIN, config, os;
+'use strict';
+var ContentType, LineBase, LineContact, LineGroup, LineMessage, LineRoom, Message, Promise, fs, unirest,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty,
+  __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-os = require("os");
+fs = require('fs');
 
-LINE_DOMAIN = "gd2.line.naver.jp";
+unirest = require('unirest');
 
-config = module.exports = {
-  LINE_DOMAIN: LINE_DOMAIN,
-  LINE_OS_URL: "os.line.naver.jp",
-  LINE_HTTP_URL: "/api/v4/TalkService.do",
-  LINE_STICKER_URL: "dl.stickershop.line.naver.jp/products/",
-  LINE_POLL_URL: "/P4",
-  LINE_CERTIFICATE_URL: "/Q",
-  LINE_SHOP_PATH: "/SHOP4",
-  LINE_SESSION_LINE_URL: "/authct/v1/keys/line",
-  LINE_SESSION_NAVER_URL: "/authct/v1/keys/naver",
-  ip: "127.0.0.1",
-  version: "3.7.0",
-  revision: 0,
-  hostname: os.hostname(),
-  EMAIL_REGEX: /[^@]+@[^@]+\.[^@]+/,
-  Headers: {
-    "User-Agent": "jsline (LINE DesktopApp for Linux)",
-    "X-Line-Application": "DESKTOPWIN\t3.2.1.83\tWINDOWS\t5.1.2600-XP-x64"
-  }
-};
+Promise = require('bluebird');
 
-module.exports = {
-  LineAPI: LineAPI,
-  LineClient: LineClient,
-  LineRoom: LineRoom,
-  LineGroup: LineGroup,
-  LineContact: LineContact,
-  LineMessage: LineMessage
-};
-"use strict";
-var ContentType,
-    LineBase,
-    LineContact,
-    LineGroup,
-    LineMessage,
-    LineRoom,
-    Message,
-    Promise,
-    fs,
-    unirest,
-    __extends = function (child, parent) {
-  for (var key in parent) {
-    if (__hasProp.call(parent, key)) child[key] = parent[key];
-  }function ctor() {
-    this.constructor = child;
-  }ctor.prototype = parent.prototype;child.prototype = new ctor();child.__super__ = parent.prototype;return child;
-},
-    __hasProp = ({}).hasOwnProperty,
-    __indexOf = [].indexOf || function (item) {
-  for (var i = 0, l = this.length; i < l; i++) {
-    if (i in this && this[i] === item) return i;
-  }return -1;
-};
+Message = require('curve-thrift/line_types').Message;
 
-fs = require("fs");
+ContentType = require('curve-thrift/line_types').ContentType;
 
-unirest = require("unirest");
-
-Promise = require("bluebird");
-
-Message = require("curve-thrift/line_types").Message;
-
-ContentType = require("curve-thrift/line_types").ContentType;
-
-Function.prototype.property = function (prop, desc) {
+Function.prototype.property = function(prop, desc) {
   return Object.defineProperty(this.prototype, prop, desc);
 };
 
-LineMessage = (function () {
+LineMessage = (function() {
   function LineMessage(client, message) {
     this._client = client;
     this.id = message.id;
@@ -900,27 +825,28 @@ LineMessage = (function () {
     this.createdTime = new Date(message.createdTime);
   }
 
-  LineMessage.prototype.toString = function () {
+  LineMessage.prototype.toString = function() {
     return "LineMessage (contentType=" + ContentType._VALUES_TO_NAMES[this.contentType] + ", sender=" + this.sender + ", receiver=" + this.receiver + ", msg=\"" + this.text + "\")";
   };
 
   return LineMessage;
+
 })();
 
-LineBase = (function () {
+LineBase = (function() {
   function LineBase() {
     this._messageBox = null;
   }
 
-  LineBase.prototype.sendMessage = function (text) {
+  LineBase.prototype.sendMessage = function(text) {
     var message;
     message = new Message({
       to: this.id,
       text: text
     });
-    return this._client.sendMessage(message).then(function (result) {
+    return this._client.sendMessage(message).then(function(result) {
       return true;
-    }, function (err) {
+    }, function(err) {
       if (err) {
         console.log(err);
       }
@@ -928,23 +854,23 @@ LineBase = (function () {
     });
   };
 
-  LineBase.prototype.sendSticker = function (stickerId, stickerPackageId, stickerVersion, stickerText) {
+  LineBase.prototype.sendSticker = function(stickerId, stickerPackageId, stickerVersion, stickerText) {
     var message;
     if (stickerId == null) {
-      stickerId = "13";
+      stickerId = '13';
     }
     if (stickerPackageId == null) {
-      stickerPackageId = "1";
+      stickerPackageId = '1';
     }
     if (stickerVersion == null) {
-      stickerVersion = "100";
+      stickerVersion = '100';
     }
     if (stickerText == null) {
-      stickerText = "[null]";
+      stickerText = '[null]';
     }
     message = new Message({
       to: this.id,
-      text: ""
+      text: ''
     });
     message.contentType = ContentType.STICKER;
     message.contentMetadata = {
@@ -953,10 +879,10 @@ LineBase = (function () {
       STKVER: stickerVersion,
       STKTXT: stickerText
     };
-    return this._client.sendMessage(message).then(function (result) {
+    return this._client.sendMessage(message).then(function(result) {
       console.log(result);
       return true;
-    }, function (err) {
+    }, function(err) {
       if (err) {
         console.log(err);
       }
@@ -964,27 +890,27 @@ LineBase = (function () {
     });
   };
 
-  LineBase.prototype.sendImage = function (path) {
+  LineBase.prototype.sendImage = function(path) {
     var defer;
     defer = Promise.defer();
-    fs.readFile(path, (function (_this) {
-      return function (readFileErr, buf) {
+    fs.readFile(path, (function(_this) {
+      return function(readFileErr, buf) {
         var message;
         message = new Message({
           to: _this.id,
-          text: "",
+          text: '',
           contentType: ContentType.IMAGE,
-          contentPreview: buf.toString("hex"),
+          contentPreview: buf.toString('hex'),
           contentMetadata: {
-            PREVIEW_URL: "",
-            DOWNLOAD_URL: "",
-            PUBLIC: "true"
+            PREVIEW_URL: '',
+            DOWNLOAD_URL: '',
+            PUBLIC: 'true'
           }
         });
-        return _this._client.sendMessage(message).then(function (result) {
+        return _this._client.sendMessage(message).then(function(result) {
           console.log(result);
           return defer.resolve(true);
-        }, function (err) {
+        }, function(err) {
           if (err) {
             console.log(err);
           }
@@ -995,33 +921,33 @@ LineBase = (function () {
     return defer.promise;
   };
 
-  LineBase.prototype.sendImageWithURL = function (url) {
+  LineBase.prototype.sendImageWithURL = function(url) {
     var defer;
     defer = Promise.defer();
-    unirest.get(url).end(function (res) {
+    unirest.get(url).end(function(res) {
       if (res.error) {
         throw err;
       }
       return defer.resolve(res.raw_body);
     });
-    return defer.promise.then((function (_this) {
-      return function (image) {
+    return defer.promise.then((function(_this) {
+      return function(image) {
         var message;
         message = new Message({
           to: _this.id,
-          text: "",
+          text: '',
           contentType: ContentType.IMAGE,
           contentPreview: image,
           contentMetadata: {
             PREVIEW_URL: url,
             DOWNLOAD_URL: url,
-            PUBLIC: "true"
+            PUBLIC: 'true'
           }
         });
         _this._client.sendMessage(message, 1);
         return true;
       };
-    })(this), function (err) {
+    })(this), function(err) {
       if (err) {
         console.log(err);
       }
@@ -1029,15 +955,15 @@ LineBase = (function () {
     });
   };
 
-  LineBase.prototype.getRecentMessages = function (count) {
+  LineBase.prototype.getRecentMessages = function(count) {
     if (count == null) {
       count = 1;
     }
     if (this._messageBox) {
       return this._client.getRecentMessages(this._messageBox, count);
     } else {
-      return this._client.getMessageBox(this.id).then((function (_this) {
-        return function (messageBox) {
+      return this._client.getMessageBox(this.id).then((function(_this) {
+        return function(messageBox) {
           _this._messageBox = messageBox;
           return _this._client.getRecentMessages(_this._messageBox, count);
         };
@@ -1045,14 +971,15 @@ LineBase = (function () {
     }
   };
 
-  LineBase.prototype.valueOf = function () {
+  LineBase.prototype.valueOf = function() {
     return this.id;
   };
 
   return LineBase;
+
 })();
 
-LineGroup = (function (_super) {
+LineGroup = (function(_super) {
   __extends(LineGroup, _super);
 
   function LineGroup(client, group, is_joined) {
@@ -1071,11 +998,11 @@ LineGroup = (function (_super) {
     } catch (_error) {
       this.creator = null;
     }
-    this.members = group.members.map(function (member) {
+    this.members = group.members.map(function(member) {
       return new LineContact(client, member);
     });
     if (group.invitee) {
-      this.invitee = group.invitee.map(function (inv) {
+      this.invitee = group.invitee.map(function(inv) {
         return new LineContact(client, inv);
       });
     } else {
@@ -1083,16 +1010,16 @@ LineGroup = (function (_super) {
     }
   }
 
-  LineGroup.prototype.acceptGroupInvitation = function () {
+  LineGroup.prototype.acceptGroupInvitation = function() {
     if (!this.is_joined) {
       return this._client.acceptGroupInvitation(this);
     } else {
-      console.log("You are already in group");
+      console.log('You are already in group');
       return false;
     }
   };
 
-  LineGroup.prototype.leave = function () {
+  LineGroup.prototype.leave = function() {
     var err;
     if (this.is_joined) {
       try {
@@ -1103,12 +1030,12 @@ LineGroup = (function (_super) {
         return false;
       }
     } else {
-      console.log("You are not joined to group");
+      console.log('You are not joined to group');
       return false;
     }
   };
 
-  LineGroup.prototype.getMemberIds = function () {
+  LineGroup.prototype.getMemberIds = function() {
     var member, _i, _len, _ref, _results;
     _ref = this.members;
     _results = [];
@@ -1119,34 +1046,31 @@ LineGroup = (function (_super) {
     return _results;
   };
 
-  LineGroup.prototype._containId = function (id) {
+  LineGroup.prototype._containId = function(id) {
     return __indexOf.call(this.members, id) >= 0;
   };
 
-  LineGroup.prototype.toString = function () {
-    if (this.is_joined) {
-      return "<LineGroup " + this.name + " #" + this.members.length + ">";
-    } else {
-      return "<LineGroup " + this.name + " #" + this.members.length + " (invited)>";
-    }
+  LineGroup.prototype.toString = function() {
+    return this.id;
   };
 
   return LineGroup;
+
 })(LineBase);
 
-LineRoom = (function (_super) {
+LineRoom = (function(_super) {
   __extends(LineRoom, _super);
 
   function LineRoom(client, room) {
     this._client = client;
     this._room = room;
     this.id = room.mid;
-    this.contacts = room.contacts.map(function (contact) {
+    this.contacts = room.contacts.map(function(contact) {
       return new LineContact(client, contact);
     });
   }
 
-  LineRoom.prototype.leave = function () {
+  LineRoom.prototype.leave = function() {
     var err;
     try {
       this.leaveRoom(this);
@@ -1157,7 +1081,7 @@ LineRoom = (function (_super) {
     }
   };
 
-  LineRoom.prototype.invite = function (contact) {
+  LineRoom.prototype.invite = function(contact) {
     var err;
     try {
       return this._client.inviteIntoRoom(this, new LineContact(this._client, contact));
@@ -1167,7 +1091,7 @@ LineRoom = (function (_super) {
     }
   };
 
-  LineRoom.prototype.getContactIds = function () {
+  LineRoom.prototype.getContactIds = function() {
     var contact, _i, _len, _ref, _results;
     _ref = this.contacts;
     _results = [];
@@ -1178,18 +1102,19 @@ LineRoom = (function (_super) {
     return _results;
   };
 
-  LineRoom.prototype._containId = function (id) {
+  LineRoom.prototype._containId = function(id) {
     return __indexOf.call(this.contacts, id) >= 0;
   };
 
-  LineRoom.prototype.toString = function () {
+  LineRoom.prototype.toString = function() {
     return "<LineRoom " + this.contacts + ">";
   };
 
   return LineRoom;
+
 })(LineBase);
 
-LineContact = (function (_super) {
+LineContact = (function(_super) {
   __extends(LineContact, _super);
 
   function LineContact(client, contact) {
@@ -1197,51 +1122,54 @@ LineContact = (function (_super) {
     this._contact = contact;
     this.id = contact.mid;
     this.name = contact.displayName;
+    this.iconPath = "http://" + config.LINE_OS_URL + contact.picturePath + "/preview";
     this.statusMessage = contact.statusMessage;
   }
 
-  LineContact.property("rooms", {
-    get: function () {
-      return this._client.rooms.map((function (_this) {
-        return function (room) {
+  LineContact.property('rooms', {
+    get: function() {
+      return this._client.rooms.map((function(_this) {
+        return function(room) {
           if (room._containId(_this.id)) {
             return room;
           }
         };
       })(this));
     },
-    set: function (rooms) {
+    set: function(rooms) {
       return this.rooms = rooms;
     }
   });
 
-  LineContact.property("groups", {
-    get: function () {
-      return this._client.groups.map(function (group) {
+  LineContact.property('groups', {
+    get: function() {
+      return this._client.groups.map(function(group) {
         if (group._containId(this.id)) {
           return group;
         }
       });
     },
-    set: function (groups) {
+    set: function(groups) {
       return this.groups = groups;
     }
   });
 
-  LineContact.prototype.toString = function () {
-    return "<LineContact " + this.name + ">";
+  LineContact.prototype.toString = function() {
+    return this.id;
   };
 
   return LineContact;
+
 })(LineBase);
-"use strict";
+
+'use strict';
 var PinVerifier, RSA, utf8;
 
-utf8 = require("utf8");
+utf8 = require('utf8');
 
-RSA = require("node-bignumber");
+RSA = require('node-bignumber');
 
-PinVerifier = (function () {
+PinVerifier = (function() {
   function PinVerifier(id, password, APIContext, config) {
     this.id = id;
     this.password = password;
@@ -1249,14 +1177,14 @@ PinVerifier = (function () {
     this.config = config;
   }
 
-  PinVerifier.prototype.getRSACrypto = function (json) {
+  PinVerifier.prototype.getRSACrypto = function(json) {
     var chr, e, keyname, n, rsa, sessionKey, _ref;
     this.json = json;
     rsa = new RSA.Key();
     chr = String.fromCharCode;
-    sessionKey = json.session_key;
+    sessionKey = json['session_key'];
     this.message = utf8.encode(chr(sessionKey.length) + sessionKey + chr(this.id.length) + this.id + chr(this.password.length) + this.password);
-    _ref = json.rsa_key.split(","), keyname = _ref[0], n = _ref[1], e = _ref[2];
+    _ref = json['rsa_key'].split(','), keyname = _ref[0], n = _ref[1], e = _ref[2];
     rsa.setPublic(n.toString(16), e.toString(16));
     this.crypto = rsa.encrypt(this.message);
     return {
@@ -1266,4 +1194,44 @@ PinVerifier = (function () {
   };
 
   return PinVerifier;
+
 })();
+
+var LINE_DOMAIN, config, os;
+
+os = require('os');
+
+LINE_DOMAIN = 'gd2.line.naver.jp';
+
+config = {
+  LINE_DOMAIN: LINE_DOMAIN,
+  LINE_OS_URL: 'os.line.naver.jp',
+  LINE_HTTP_URL: '/api/v4/TalkService.do',
+  LINE_STICKER_URL: 'dl.stickershop.line.naver.jp/products/',
+  LINE_POLL_URL: '/P4',
+  LINE_CERTIFICATE_URL: '/Q',
+  LINE_SHOP_PATH: '/SHOP4',
+  LINE_SESSION_LINE_URL: '/authct/v1/keys/line',
+  LINE_SESSION_NAVER_URL: '/authct/v1/keys/naver',
+  ip: '127.0.0.1',
+  version: '3.7.0',
+  revision: 0,
+  hostname: os.hostname(),
+  EMAIL_REGEX: /[^@]+@[^@]+\.[^@]+/,
+  Headers: {
+    'User-Agent': 'jsline (LINE DesktopApp for Linux)',
+    'X-Line-Application': 'DESKTOPWIN\t3.2.1.83\tWINDOWS\t5.1.2600-XP-x64'
+  },
+  OT: ttypes.OpType,
+  TalkException: ttypes.TalkException
+};
+
+module.exports = {
+  LineAPIConfig: config,
+  LineAPI: LineAPI,
+  LineClient: LineClient,
+  LineRoom: LineRoom,
+  LineGroup: LineGroup,
+  LineContact: LineContact,
+  LineMessage: LineMessage
+};

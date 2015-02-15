@@ -2,7 +2,13 @@
 
 util = require 'util'
 Promise = require 'bluebird'
+# Promise.longStackTraces()
 ttypes = require 'curve-thrift/line_types'
+
+ttypes.OpType._VALUES_TO_NAMES = (type) ->
+  for name, typeNumber of ttypes.OpType
+    if type is typeNumber
+      return name
 
 class LineClient extends LineAPI
   constructor: (id = null, password = null, authToken = null, certificate = null, is_mac = false, com_name = 'CYBAI') ->
@@ -33,7 +39,7 @@ class LineClient extends LineAPI
       Promise.join(@getLastOpRevision(), @getProfile(), @refreshGroups(), @refreshContacts(), @refreshActiveRooms())
       .then () ->
         console.log 'Login Successfully'
-        true
+        result
       , (err) ->
         console.log err
         false
@@ -221,7 +227,7 @@ class LineClient extends LineAPI
                   when OT.END_OF_OPERATION then continue
                   when OT.SEND_MESSAGE then continue
                   when OT.RECEIVE_MESSAGE
-                    message = new LineMessage operation.message
+                    message = new LineMessage @, operation.message
 
                     raw_sender = operation.message.from
                     raw_receiver = operation.message.to
@@ -246,6 +252,7 @@ class LineClient extends LineAPI
                     console.log "[*] #{OT._VALUES_TO_NAMES[operation.type]}"
                     console.dir operation
                 @revision = Math.max operation.revision, @revision
+                @revision
             catch err
               if err instanceof TalkException and err.code is 9
                 throw new Error 'user logged in on another machine'

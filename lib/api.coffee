@@ -44,6 +44,7 @@ class LineAPI
         rsaCrypto.crypto,
         (err, result) =>
           console.log err if err
+          @_client.pinCode = result.pinCode
           console.log(
             "Enter Pincode #{result.pinCode} to your mobile phone in 2 minutes"
           )

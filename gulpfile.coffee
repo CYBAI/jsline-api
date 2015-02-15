@@ -1,12 +1,10 @@
 'use strict'
 gulp = require 'gulp'
 $ = require('gulp-load-plugins')()
-to5 = require 'gulp-6to5'
 
 gulp.task 'js', ->
-  gulp.src ['lib/*.coffee']
+  gulp.src ['lib/!(config)*.coffee', 'lib/config.coffee']
     .pipe($.coffee {bare: true, nodejs: true, harmony: true}).on 'error', console.log
-    .pipe to5()
     .pipe $.concat 'index.js'
     .pipe gulp.dest '.'
 

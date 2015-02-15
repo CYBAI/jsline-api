@@ -1,7 +1,7 @@
 os = require 'os'
 LINE_DOMAIN = 'gd2.line.naver.jp'
 
-config = module.exports = {
+config = {
   LINE_DOMAIN: LINE_DOMAIN
   LINE_OS_URL: 'os.line.naver.jp'
   LINE_HTTP_URL: '/api/v4/TalkService.do'
@@ -20,9 +20,12 @@ config = module.exports = {
     'User-Agent': 'jsline (LINE DesktopApp for Linux)'
     'X-Line-Application': 'DESKTOPWIN\t3.2.1.83\tWINDOWS\t5.1.2600-XP-x64'
   }
+  OT: ttypes.OpType
+  TalkException: ttypes.TalkException
 }
 
 module.exports =
+  LineAPIConfig: config
   LineAPI: LineAPI
   LineClient: LineClient
   LineRoom: LineRoom
