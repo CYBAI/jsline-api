@@ -45,9 +45,12 @@ class LineAPI
         (err, result) =>
           console.log err if err
           @_client.pinCode = result.pinCode
-          console.log(
-            "Enter Pincode #{result.pinCode} to your mobile phone in 2 minutes"
-          )
+          if alert
+            alert "Enter Pincode #{result.pinCode} to your mobile phone in 2 minutes"
+          else
+            console.log(
+              "Enter Pincode #{result.pinCode} to your mobile phone in 2 minutes"
+            )
           @_checkLoginResultType result.type, result
           @_loginWithVerifier result
           .then (verifierResult) =>
