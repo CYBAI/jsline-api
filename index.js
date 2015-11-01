@@ -56,7 +56,11 @@ LineAPI = (function() {
             console.log(err);
           }
           _this._client.pinCode = result.pinCode;
-          console.log("Enter Pincode " + result.pinCode + " to your mobile phone in 2 minutes");
+          if (alert) {
+            alert("Enter Pincode " + result.pinCode + " to your mobile phone in 2 minutes");
+          } else {
+            console.log("Enter Pincode " + result.pinCode + " to your mobile phone in 2 minutes");
+          }
           _this._checkLoginResultType(result.type, result);
           return _this._loginWithVerifier(result).then(function(verifierResult) {
             _this._checkLoginResultType(verifierResult.type, verifierResult);
