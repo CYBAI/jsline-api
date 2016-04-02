@@ -3,7 +3,12 @@ Line in JS
 
 This is inspired by [carpedm20's LINE API](https://github.com/carpedm20/LINE).
 
-There's still lots of *TODO* and refactor, so please don't use it now.
+Still work in process, don't use it now! :construction_worker:
+
+**TODO** features
+- Fix `sendImage` and `sendImageWithURL`
+- Implement `sendChatChecked`
+- API logic in Redux way
 
 Author
 ------
