@@ -7,7 +7,7 @@ Still work in process, don't use it now! :construction_worker:
 
 **TODO** features
 - Fix `sendImage` and `sendImageWithURL`
-- Implement `sendChatChecked`
+- Implement `longPoll` for fetch messages
 - API logic in Redux way
 
 Author
