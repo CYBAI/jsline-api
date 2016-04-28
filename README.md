@@ -6,9 +6,8 @@ This is inspired by [carpedm20's LINE API](https://github.com/carpedm20/LINE).
 Still work in process, don't use it now! :construction_worker:
 
 **TODO** features
-- Fix `sendImage` and `sendImageWithURL`
 - Implement `longPoll` for fetch messages
-- API logic in Redux way
+- Improve API logic
 
 Author
 ------
