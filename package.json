@@ -29,6 +29,7 @@
     "rsa-pem-from-mod-exp": "^0.8.4",
     "thrift": "^0.9.3",
     "through": "^2.3.8",
+    "tmp": "0.0.28",
     "unirest": "^0.4.2",
     "utf8": "^2.1.1"
   }
