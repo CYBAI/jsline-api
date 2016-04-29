@@ -1,4 +1,5 @@
 require('babel-core/register');
+require('babel-polyfill')
 var LineModel = require('./lib/models');
 
 module.exports = {
