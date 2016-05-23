@@ -37,34 +37,35 @@ export class LineAPI {
 
   _login(id, password) {
     const pinVerifier = new PinVerifier(id, password);
-    const defer = Promise.pending();
-    this._setProvider(id)
-    .then((json) => pinVerifier.getRSACrypto(json))
-    .then((rsaCrypto) => {
-      this.setTHttpClient();
-      this._client.loginWithIdentityCredentialForCertificate(
-        this.provider, rsaCrypto.keyname, rsaCrypto.credentials,
-        true, this.config.ip, this.config.hostname, rsaCrypto.message,
-        (err, result) => {
-          if (err) {
-            console.log('LoginFailed');
-            console.error(err);
-            throw (err);
-          }
-          console.log(result);
-          this._client.pinCode = result.pinCode;
-          this.alertOrConsoleLog(
-            `Enter Pincode ${result.pinCode} to your mobile phone in 2 minutes`
-          );
-          this._checkLoginResultType(result.type, result);
-          this._loginWithVerifier(result)
-          .then((verifierResult) => {
-            this._checkLoginResultType(verifierResult.type, verifierResult);
-            defer.resolve(verifierResult);
+    return new Promise((resolve, reject) => (
+      this._setProvider(id)
+      .then((json) => pinVerifier.getRSACrypto(json))
+      .then((rsaCrypto) => {
+        this.setTHttpClient();
+        this._client.loginWithIdentityCredentialForCertificate(
+          this.provider, rsaCrypto.keyname, rsaCrypto.credentials,
+          true, this.config.ip, this.config.hostname, rsaCrypto.message,
+          (err, result) => {
+            if (err) {
+              console.log('LoginFailed');
+              console.error(err);
+              return reject(err);
+            }
+            console.log(result);
+            this._client.pinCode = result.pinCode;
+            this.alertOrConsoleLog(
+              `Enter Pincode ${result.pinCode}
+              to your mobile phone in 2 minutes`
+            );
+            this._checkLoginResultType(result.type, result);
+            this._loginWithVerifier(result)
+            .then((verifierResult) => {
+              this._checkLoginResultType(verifierResult.type, verifierResult);
+              resolve(verifierResult);
+            });
           });
-        });
-    });
-    return defer.promise;
+      })
+    ));
   }
 
   _loginWithVerifier() {
@@ -217,12 +218,14 @@ export class LineAPI {
    * @return {Promise}     [defer first, then resolve after getting data]
    */
   getJson(path) {
-    const defer = Promise.pending();
-    unirest.get(`http://${this.config.LINE_DOMAIN}${path}`)
-      .headers(this.config.Headers)
-      .timeout(120000)
-      .end((res) => defer.resolve(res.body));
-    return defer.promise;
+    return new Promise((resolve, reject) => (
+      unirest.get(`http://${this.config.LINE_DOMAIN}${path}`)
+        .headers(this.config.Headers)
+        .timeout(120000)
+        .end((res) => (
+          res.error ? reject(res.error) : resolve(res.body)
+        ))
+    ));
   }
 
   /**
@@ -233,16 +236,18 @@ export class LineAPI {
    * @return {Promise}              [defer first, then resolve after getting data]
    */
   postContent(url, data = null, filepath = null) {
-    const defer = Promise.pending();
-    unirest.post(url)
-      .headers({
-        ...this.config.Headers,
-        'Content-Type': 'multipart/form-data'
-      })
-      .timeout(120000)
-      .field(data)
-      .attach('files', filepath)
-      .end((res) => defer.resolve(res));
-    return defer.promise;
+    return new Promise((resolve, reject) => (
+      unirest.post(url)
+        .headers({
+          ...this.config.Headers,
+          'Content-Type': 'multipart/form-data'
+        })
+        .timeout(120000)
+        .field(data)
+        .attach('files', filepath)
+        .end((res) => (
+          res.error ? reject(res.error) : resolve(res)
+        ))
+    ));
   }
 }
