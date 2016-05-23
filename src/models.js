@@ -1,10 +1,6 @@
 /* eslint no-use-before-define: ["error", { "classes": false }] */
 
-import {
-  readFile as fsReadFile,
-  appendFile as fsAppendFile,
-  unlink as fsUnlink
-} from 'fs';
+import fs from 'fs';
 
 import { file as tmpFile } from 'tmp';
 import unirest from 'unirest';
@@ -13,10 +9,8 @@ import Promise from 'bluebird';
 import { config } from './config';
 import { Message, ContentType } from 'curve-thrift/line_types';
 
-const unlink = Promise.promisify(fsUnlink);
-const readFile = Promise.promisify(fsReadFile);
-const appendFile = Promise.promisify(fsAppendFile);
 const tmpFilePromise = Promise.promisify(tmpFile);
+Promise.promisifyAll(fs);
 
 function getContentTypeNameFromValue(content) {
   for (const name in ContentType) { // eslint-disable-line no-restricted-syntax
@@ -119,7 +113,7 @@ class LineBase {
       contentMetadata: null
     });
 
-    return readFile(filepath).then((bufs) => (
+    return fs.readFileAsync(filepath).then((bufs) => (
       this._client.sendMessage(message).then((responseMessage) => {
         const data = {
           params: JSON.stringify({
@@ -160,8 +154,8 @@ class LineBase {
       unireq.options.encoding = 'binary';
       return unireq.end((resp) => (
         tmpFilePromise({ postfix: '.jpg' }).then((path) => (
-          appendFile(path, resp.body, 'binary')
-            .then(() => this.sendImage(path).then(() => unlink(path)))
+          fs.appendFileAsync(path, resp.body, 'binary')
+            .then(() => this.sendImage(path).then(() => fs.unlinkAsync(path)))
         ))
       ));
     }).catch((err) => {
