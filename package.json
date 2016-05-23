@@ -2,8 +2,10 @@
   "name": "jsline-api",
   "version": "0.2.0",
   "description": "Line in JS",
-  "main": "index.js",
+  "main": "./lib/index.js",
   "scripts": {
+    "compile": "babel src --out-dir lib",
+    "prepublish": "npm run compile",
     "test": "npm run test-watch",
     "test-once": "jasmine-node spec",
     "test-watch": "jasmine-node spec --autotest --color --watch ."
@@ -16,9 +18,13 @@
     "name": "cybai",
     "email": "cyb.ai.815@gmail.com"
   },
+  "license": "MIT",
   "devDependencies": {
+    "babel": "^6.5.2",
+    "babel-cli": "^6.9.0",
     "babel-core": "^6.7.2",
     "babel-eslint": "^6.0.4",
+    "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-transform-object-rest-spread": "^6.6.5",
     "babel-polyfill": "^6.7.4",
     "babel-preset-es2015": "^6.6.0",

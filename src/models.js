@@ -421,7 +421,7 @@ class LineContact extends LineBase {
   }
 }
 
-export {
+export default {
   LineRoom,
   LineGroup,
   LineMessage,
