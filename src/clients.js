@@ -208,13 +208,18 @@ export class LineClient extends LineAPI {
    */
   refreshGroups() {
     if (this._checkAuth()) {
-      this._getGroupIdsJoined()
-        .then((groupIdsJoined) => this.addGroupsWithIds(groupIdsJoined));
-      this._getGroupIdsInvited()
-        .then(
-          (groupIdsInvited) => this.addGroupsWithIds(groupIdsInvited, false)
-        );
-      return Promise.resolve(this.groups);
+      return new Promise((resolve, reject) => {
+        this._getGroupIdsJoined()
+          .then((groupIdsJoined) => this.addGroupsWithIds(groupIdsJoined))
+          .then(() => (
+            this._getGroupIdsInvited()
+            .then(
+              (groupIdsInvited) => this.addGroupsWithIds(groupIdsInvited, false)
+            )
+          ))
+          .then(() => resolve(this.groups))
+          .catch((err) => reject(err));
+      });
     }
     return Promise.reject(new Error('Please Login first'));
   }
