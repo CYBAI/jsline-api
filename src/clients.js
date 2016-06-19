@@ -467,7 +467,60 @@ export class LineClient extends LineAPI {
     return Promise.reject(new Error('Please Login first'));
   }
 
-  *longPoll(count = 50) { // eslint-disable-line complexity
+  longpoll() {
+    return new Promise((resolve, reject) => {
+      this._fetchOperations(this.revision, 50).then((operations) => {
+        if (!operations) {
+          console.log('No operations');
+          reject('No operations');
+          return;
+        }
+
+        return operations.map((operation) => {
+          switch (operation.type) {
+            case OpType.END_OF_OPERATION:
+            case OpType.SEND_MESSAGE:
+            case OpType.RECEIVE_MESSAGE: {
+              const message = new LineMessage(this, operation.message);
+
+              const rawSender = operation.message.from_;
+              const rawReceiver = operation.message.to;
+
+              let sender = this.getContactOrRoomOrGroupById(rawSender);
+              let receiver = this.getContactOrRoomOrGroupById(rawReceiver);
+
+              if (!sender && typeof receiver === LineGroup) {
+                receiver.members.forEach((member) => {
+                  if (member.id === rawSender) {
+                    sender = member.id;
+                  }
+                });
+              }
+
+              if (!sender || !receiver) {
+                this.refreshGroups();
+                this.refreshContacts();
+                this.refreshActiveRooms();
+                sender = this.getContactOrRoomOrGroupById(rawSender);
+                receiver = this.getContactOrRoomOrGroupById(rawReceiver);
+              }
+
+              this.revision = Math.max(operation.revision, this.revision);
+              console.log([sender, receiver, message, this.revision]);
+              resolve([sender, receiver, message, this.revision]);
+              return [sender, receiver, message, this.revision];
+            }
+            default:
+              console.log('[*]', operation);
+              resolve(operation);
+              return operation;
+          }
+        });
+      });
+    });
+  }
+
+  *longPollGenerator(count = 50) { // eslint-disable-line complexity
     if (this._checkAuth()) {
       try {
         const operations = yield this._fetchOperations(this.revision, count);
