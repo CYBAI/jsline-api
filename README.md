@@ -1,6 +1,8 @@
 Line in JS
 ==========
 
+[![Join the chat at https://gitter.im/CYBAI/jsline-api](https://badges.gitter.im/CYBAI/jsline-api.svg)](https://gitter.im/CYBAI/jsline-api?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This is inspired by [carpedm20's LINE API](https://github.com/carpedm20/LINE).
 
 Still work in process, don't use it now! :construction_worker:
