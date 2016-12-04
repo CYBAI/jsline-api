@@ -45,7 +45,7 @@ export class LineClient extends LineAPI {
     } else {
       // this.config.Headers['User-Agent'] = `DESKTOP:WIN:${this.config.version}(5.1.2600-XP-x64)`;
       this.config.Headers['X-Line-Application'] =
-        `DESKTOPWIN\t${this.config.version}\tWINDOWS\t5.1.2600-XP-x64`;
+        `DESKTOPWIN\t${this.config.version}\tWINDOWS\t5.2.2-XP-x64`;
     }
 
     if (options.authToken) {
